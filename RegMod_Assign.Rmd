@@ -1,0 +1,160 @@
+---
+title: "Regression Models Assignment - Motor Trend"
+author: "R3M79"
+date: "29 de Janeiro de 2018"
+output: pdf_document
+---
+
+# Synopsis
+
+In this project we assume that we're performing an analysis for the magazine Motor Trend, where we'll explore the relation between MPG (miles per galon) and different predictors
+
+# Motor Trend Analysis
+
+## Overview
+
+Motor Trend intends to analyze the relation between MPG (miles per galon) and different variables.
+The goal is to answer the following questions:
+
+1. Is an automatic or manual transmission better for MPG
+
+2. Quantify the MPG difference between automatic and manual transmissions
+
+## Exploratory Analysis
+
+```{r setup, include=FALSE }
+knitr::opts_chunk$set(echo = TRUE, cache = TRUE, include = FALSE)
+
+
+```
+
+First we'll load the required libraries and data (mtcars)
+
+```{r loadLibrariesData,message=FALSE, warning=FALSE}
+
+#load libraries
+library(dplyr)
+library(ggplot2)
+
+#load data
+data(mtcars)
+
+#Define Variables for simulation
+set.seed(100) # set the seed value for reproducibility
+
+```
+
+### Data Detail and Summary
+```{r plotDataPrep,message=FALSE, warning=FALSE}
+#prepare data
+mydata<-mtcars %>%
+    mutate(transmission = ifelse(am=="0","A","M"))%>%
+    mutate(am=NULL)
+
+#prepare plot data
+plotdata <- ggplot(aes(x=as.factor(transmission), y=mpg,fill=transmission), data=mydata) + geom_boxplot()
+plotdata <- plotdata + labs(title = "Automatic vs Manual Transmission")
+plotdata <- plotdata + xlab("Transmission")
+plotdata <- plotdata + ylab("MPG")
+
+```
+
+Data can be visualized in the boxplot on Appendix - Figures
+
+```{r summDataDisplay,message=FALSE, warning=FALSE,include=TRUE}
+
+#Data Summary
+head(mydata)
+
+
+```
+From the boxplot we can see a significant difference between manual and automatic transmission, where we see a higher MPG for manual.
+
+Let's see the Linear model for the outcome MPG with Transmission as the predictor
+
+```{r linearModel1,message=FALSE, warning=FALSE,include=TRUE}
+
+#Linear Model MPG ~ transmission
+lmd1<-lm(mpg~transmission,mydata)
+summary(lmd1)$coeff
+summary(lmd1)$adj.r.squared
+
+```
+We can see from the model that there's a significante increase for in MPG for the manual transmission.
+Since the value of the adjusted R for model 1 is of only 33,85%, we shoudl consider other variables that may produce better model
+
+## Model Analysis and Selection
+
+Let's first check the correlation between all variables for the mtcars data (plot can be seen on Appendix - Figures)
+
+From the correlation plot it seems that variable cyl, disp, hp and wt have the strongest correlation.
+
+We'll create two new models to verify this.
+
+1. Model with predictors transmission + cyl + disp + hp + wt
+
+```{r linearModel2,message=FALSE, warning=FALSE,include=TRUE}
+
+#Linear Model MPG ~ transmission + cyl + disp + hp + wt
+lmd2<-lm(mpg~transmission + cyl + disp + hp + wt,mydata)
+summary(lmd2)$coeff
+summary(lmd2)$adj.r.squared
+
+```
+
+2. Model with all predictors
+
+```{r linearModel3,message=FALSE, warning=FALSE,include=TRUE}
+
+#Linear Model MPG ~ All variables
+lmd3<-lm(mpg~.,mydata)
+summary(lmd3)$coeff
+summary(lmd3)$adj.r.squared
+
+```
+
+From the values for adjusted R in both new models it looks as the second model is the best, with 82% variance explained
+
+Let's confirm with anova.
+
+```{r modelComp,message=FALSE, warning=FALSE,include=TRUE}
+
+#lets now compare the 3 models
+anova(lmd1,lmd2,lmd3)
+
+
+```
+## Conclusion
+
+We clearly see that the second model is the best (MPG ~ Transmission + Cyl + Disp + HP + WT).
+Based on this model the difference between Auto and Manual Transmission is of 1.55 MPG (on Appendix - figures we can see the residuals for this model)
+
+
+# Appendix
+
+##Figures
+
+###BoxPlot for data Mtcars
+```{r dataPlot,message=FALSE, warning=FALSE,include=TRUE}
+
+#plot data
+plotdata
+
+```
+
+###Data Correlation plot for data Mtcars
+```{r dataCorr,message=FALSE, warning=FALSE,include=TRUE}
+
+#Display Data Correlation
+pairs(mpg~ . ,data=mtcars)
+
+```
+
+### Residuals for Model 2: MPG ~ Transmission + Cyl + Disp + HP + WT
+```{r residuals,message=FALSE, warning=FALSE,include=TRUE}
+
+#display residuals
+par(mfrow=c(2,2))
+plot(lmd2)
+
+```
